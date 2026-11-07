@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Folio — Markdown, previewed</title>
+    <meta name="description" content="A quiet Markdown editor with a live preview. Runs entirely in your browser." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#FCFCFB" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F0F10" media="(prefers-color-scheme: dark)" />
+    <meta property="og:title" content="Folio — Markdown, previewed" />
+    <meta property="og:description" content="A quiet Markdown editor with a live preview. Runs entirely in your browser." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <script>
+      // Apply the saved theme and view before first paint (no flash).
+      try {
+        var s = JSON.parse(localStorage.getItem('folio:settings') || '{}');
+        if (s.theme === 'light' || s.theme === 'dark') document.documentElement.dataset.theme = s.theme;
+        if (s.view) document.documentElement.dataset.view = s.view;
+        if (typeof s.split === 'number') document.documentElement.style.setProperty('--split', s.split * 100 + '%');
+        // A saved draft or a shared link replaces the built-in welcome page: hide it until the app starts.
+        if (localStorage.getItem('folio:doc') !== null || location.hash.indexOf('share=') !== -1)
+          document.documentElement.classList.add('has-draft');
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Folio home">
+          <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="17" height="17" rx="4.5" />
+            <path d="M6 7h8M6 10h8M6 13h4.5" />
+          </svg>
+          <span class="brand-name">Folio</span>
+        </a>
+
+        <div class="title-wrap">
+          <input
+            id="doc-title"
+            class="doc-title"
+            type="text"
+            value="Untitled"
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Document title"
+            maxlength="120"
+          />
+        </div>
+
+        <div class="actions">
+          <div class="segmented" role="group" aria-label="View mode">
+            <button class="seg" data-view-btn="write" aria-label="Write" data-tip="Write  ⌥⌘1">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.8 2.7l2.5 2.5L6 12.5l-3.2.7.7-3.2z" /><path d="M9.3 4.2l2.5 2.5" /></svg>
+            </button>
+            <button class="seg" data-view-btn="split" aria-label="Split" data-tip="Split  ⌥⌘2">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.8" /><path d="M8 3v10" /></svg>
+            </button>
+            <button class="seg" data-view-btn="preview" aria-label="Preview" data-tip="Preview  ⌥⌘3">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.6 8S4 3.6 8 3.6 14.4 8 14.4 8 12 12.4 8 12.4 1.6 8 1.6 8z" /><circle cx="8" cy="8" r="2" /></svg>
+            </button>
+          </div>
+
+          <button id="theme-btn" class="icon-btn" aria-label="Theme" data-tip="Theme">
+            <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.8" /><path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9" /></svg>
+            <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.4 9.6A5.6 5.6 0 0 1 6.4 2.6a5.6 5.6 0 1 0 7 7z" /></svg>
+          </button>
+
+          <button id="menu-btn" class="icon-btn" aria-label="More" aria-haspopup="menu" aria-expanded="false" data-tip="More">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r=".6" /><circle cx="8" cy="8" r=".6" /><circle cx="12.5" cy="8" r=".6" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace" id="workspace">
+        <section class="pane pane-editor" aria-label="Editor">
+          <div id="editor" class="editor-host"></div>
+        </section>
+        <div
+          class="splitter"
+          id="splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panes"
+          tabindex="0"
+          data-tip="Drag to resize · double-click to reset"
+        ></div>
+        <section class="pane pane-preview" aria-label="Preview">
+          <div class="preview-scroll" id="preview-scroll">
+            <article id="preview" class="prose"></article>
+          </div>
+          <nav id="toc" class="toc" aria-label="Outline" hidden>
+            <div class="toc-rail" aria-hidden="true"></div>
+            <div class="toc-panel"><p class="toc-label">On this page</p><ol class="toc-list"></ol></div>
+          </nav>
+        </section>
+      </main>
+
+      <footer class="statusbar">
+        <div class="status-left">
+          <span id="stat-words">0 words</span>
+          <span class="sep hide-sm" aria-hidden="true">·</span>
+          <span id="stat-chars" class="hide-sm">0 characters</span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span id="stat-read">&lt; 1 min read</span>
+        </div>
+        <div class="status-right">
+          <span id="stat-cursor" class="hide-sm">Ln 1, Col 1</span>
+          <span class="sep hide-sm" aria-hidden="true">·</span>
+          <span id="stat-saved" class="saved">Saved</span>
+        </div>
+      </footer>
+    </div>
+
+    <div id="menu" class="menu" role="menu" aria-label="More actions" hidden>
+      <button role="menuitem" data-action="palette">Command menu<kbd>⌘K</kbd></button>
+      <div class="menu-sep" role="separator"></div>
+      <button role="menuitem" data-action="new">New document</button>
+      <button role="menuitem" data-action="open">Open file…<kbd>⌘O</kbd></button>
+      <button role="menuitem" data-action="sample">Show example</button>
+      <div class="menu-sep" role="separator"></div>
+      <button role="menuitem" data-action="download-md">Download .md<kbd>⌘S</kbd></button>
+      <button role="menuitem" data-action="download-html">Download .html</button>
+      <button role="menuitem" data-action="copy-html">Copy HTML</button>
+      <button role="menuitem" data-action="share">Copy share link</button>
+      <div class="menu-sep" role="separator"></div>
+      <button role="menuitemcheckbox" data-action="toggle-sync" aria-checked="true">Sync scroll</button>
+      <button role="menuitemcheckbox" data-action="toggle-focus" aria-checked="false">Focus mode<kbd>⌥⌘F</kbd></button>
+      <button role="menuitemcheckbox" data-action="toggle-outline" aria-checked="true">Outline</button>
+      <button role="menuitemcheckbox" data-action="toggle-serif" aria-checked="false">Serif preview</button>
+      <button role="menuitemcheckbox" data-action="toggle-system" aria-checked="true">Match system theme</button>
+    </div>
+
+    <div id="palette" class="palette" hidden>
+      <div class="palette-box" role="dialog" aria-modal="true" aria-label="Command menu">
+        <div class="palette-field">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" /><path d="M10.4 10.4l3.2 3.2" /></svg>
+          <input
+            id="palette-input"
+            type="text"
+            placeholder="Type a command or a heading…"
+            autocomplete="off"
+            spellcheck="false"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="palette-list"
+            aria-autocomplete="list"
+          />
+          <kbd>esc</kbd>
+        </div>
+        <ul id="palette-list" class="palette-list" role="listbox" aria-label="Commands"></ul>
+        <p class="palette-empty" hidden>No matches</p>
+      </div>
+    </div>
+
+    <div id="toasts" class="toasts" aria-live="polite"></div>
+
+    <div id="drop" class="drop" hidden>
+      <div class="drop-inner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" /></svg>
+        <span>Drop a Markdown file to open it</span>
+      </div>
+    </div>
+
+    <input id="file-input" type="file" accept=".md,.markdown,.mdown,.mkd,.txt,text/markdown,text/plain" hidden />
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

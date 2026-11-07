@@ -1,0 +1,128 @@
+/* Design tokens. Shared by the app and by exported HTML files. */
+
+:root {
+  --font-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Source Serif 4 Variable', 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --bg: #fcfcfb;
+  --bg-elev: #ffffff;
+  --bg-subtle: #f4f4f2;
+  --bg-code: #f7f7f5;
+  --bg-hover: rgba(20, 20, 18, 0.05);
+  --bg-active: rgba(20, 20, 18, 0.08);
+  --text: #1a1a1a;
+  --text-2: #464644;
+  --muted: #6b6b68;
+  --faint: #a3a39f;
+  --border: #ebebe8;
+  --border-strong: #dcdcd8;
+  --accent: #2f5bea;
+  --accent-soft: rgba(47, 91, 234, 0.1);
+  --accent-line: rgba(47, 91, 234, 0.35);
+  --selection: rgba(47, 91, 234, 0.16);
+  --inverse-bg: #1a1a1a;
+  --inverse-text: #f4f4f2;
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px -6px rgba(0, 0, 0, 0.14);
+
+  --note: #2f5bea;
+  --tip: #1d7a43;
+  --important: #7c4ddb;
+  --warning: #a16207;
+  --caution: #c53030;
+
+  /* Syntax colors for the editor, tuned to match Shiki's Vitesse themes in the preview. */
+  --syn-keyword: #1e754f;
+  --syn-string: #a05d4f;
+  --syn-number: #2f798a;
+  --syn-function: #507a34;
+  --syn-type: #2b7887;
+  --syn-property: #806e14;
+  --syn-variable: #90663b;
+  --syn-comment: #697169;
+  --syn-punct: #6f6f6f;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0f0f10;
+    --bg-elev: #131315;
+    --bg-subtle: #1a1a1c;
+    --bg-code: #161618;
+    --bg-hover: rgba(255, 255, 255, 0.05);
+    --bg-active: rgba(255, 255, 255, 0.08);
+    --text: #e6e6e6;
+    --text-2: #b8b8b8;
+    --muted: #8c8c8c;
+    --faint: #5c5c5f;
+    --border: #232325;
+    --border-strong: #303033;
+    --accent: #7d9bff;
+    --accent-soft: rgba(125, 155, 255, 0.12);
+    --accent-line: rgba(125, 155, 255, 0.4);
+    --selection: rgba(125, 155, 255, 0.22);
+    --inverse-bg: #e6e6e6;
+    --inverse-text: #111112;
+    --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+
+    --note: #7d9bff;
+    --tip: #4fb87a;
+    --important: #a98bf0;
+    --warning: #d6a23a;
+    --caution: #ef6b6b;
+
+    --syn-keyword: #4d9375;
+    --syn-string: #c98a7d;
+    --syn-number: #4c9a91;
+    --syn-function: #80a665;
+    --syn-type: #5da994;
+    --syn-property: #b8a965;
+    --syn-variable: #bd976a;
+    --syn-comment: #758575;
+    --syn-punct: #828282;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0f0f10;
+  --bg-elev: #131315;
+  --bg-subtle: #1a1a1c;
+  --bg-code: #161618;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-active: rgba(255, 255, 255, 0.08);
+  --text: #e6e6e6;
+  --text-2: #b8b8b8;
+  --muted: #8c8c8c;
+  --faint: #5c5c5f;
+  --border: #232325;
+  --border-strong: #303033;
+  --accent: #7d9bff;
+  --accent-soft: rgba(125, 155, 255, 0.12);
+  --accent-line: rgba(125, 155, 255, 0.4);
+  --selection: rgba(125, 155, 255, 0.22);
+  --inverse-bg: #e6e6e6;
+  --inverse-text: #111112;
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+
+  --note: #7d9bff;
+  --tip: #4fb87a;
+  --important: #a98bf0;
+  --warning: #d6a23a;
+  --caution: #ef6b6b;
+
+  --syn-keyword: #4d9375;
+  --syn-string: #c98a7d;
+  --syn-number: #4c9a91;
+  --syn-function: #80a665;
+  --syn-type: #5da994;
+  --syn-property: #b8a965;
+  --syn-variable: #bd976a;
+  --syn-comment: #758575;
+  --syn-punct: #828282;
+
+  color-scheme: dark;
+}
