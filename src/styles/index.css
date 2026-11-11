@@ -1,0 +1,8 @@
+/* All app styles, linked from index.html so they block first paint (in dev too). */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/source-serif-4';
+@import './tokens.css';
+@import './app.css';
+@import './prose.css';
+@import './features.css';

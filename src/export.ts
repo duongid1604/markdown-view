@@ -39,7 +39,13 @@ function escapeHtml(s: string) {
 }
 
 /** A single self-contained HTML file that looks like the preview, in light and dark. */
-export function buildStandaloneHtml(title: string, preview: HTMLElement, serif: boolean, katexVersion: string | null): string {
+export function buildStandaloneHtml(
+  title: string,
+  preview: HTMLElement,
+  serif: boolean,
+  katexVersion: string | null,
+  width = '70ch',
+): string {
   // KaTeX needs its stylesheet and fonts; link the matching version from a CDN only when math is present.
   const katexLink =
     katexVersion && preview.querySelector('.katex')
@@ -59,7 +65,7 @@ ${proseCss}
 </style>
 </head>
 <body>
-<main class="prose${serif ? ' serif' : ''}">
+<main class="prose${serif ? ' serif' : ''}" style="--prose-width:${width}">
 ${cleanPreviewHtml(preview)}
 </main>
 </body>

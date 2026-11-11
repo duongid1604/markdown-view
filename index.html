@@ -7,7 +7,7 @@
     <meta name="description" content="A quiet Markdown editor with a live preview. Runs entirely in your browser." />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#FCFCFB" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0F0F10" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#1B1B1D" media="(prefers-color-scheme: dark)" />
     <meta property="og:title" content="Folio — Markdown, previewed" />
     <meta property="og:description" content="A quiet Markdown editor with a live preview. Runs entirely in your browser." />
     <meta property="og:type" content="website" />
@@ -18,12 +18,15 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./src/styles/index.css" />
     <script>
       // Apply the saved theme and view before first paint (no flash).
       try {
         var s = JSON.parse(localStorage.getItem('folio:settings') || '{}');
         if (s.theme === 'light' || s.theme === 'dark') document.documentElement.dataset.theme = s.theme;
         if (s.view) document.documentElement.dataset.view = s.view;
+        if (s.width === 'full') document.documentElement.style.setProperty('--prose-width', '100%');
+        else if (typeof s.width === 'number') document.documentElement.style.setProperty('--prose-width', Math.round(s.width) + 'px');
         if (typeof s.split === 'number') document.documentElement.style.setProperty('--split', s.split * 100 + '%');
         // A saved draft or a shared link replaces the built-in welcome page: hide it until the app starts.
         if (localStorage.getItem('folio:doc') !== null || location.hash.indexOf('share=') !== -1)
@@ -96,6 +99,8 @@
           <div class="preview-scroll" id="preview-scroll">
             <article id="preview" class="prose"></article>
           </div>
+          <div class="page-handle" data-side="left" role="separator" aria-orientation="vertical" aria-label="Page width" tabindex="0" data-tip="Drag to resize · double-click to reset"></div>
+          <div class="page-handle" data-side="right" role="separator" aria-orientation="vertical" aria-label="Page width" tabindex="0" data-tip="Drag to resize · double-click to reset"></div>
           <nav id="toc" class="toc" aria-label="Outline" hidden>
             <div class="toc-rail" aria-hidden="true"></div>
             <div class="toc-panel"><p class="toc-label">On this page</p><ol class="toc-list"></ol></div>

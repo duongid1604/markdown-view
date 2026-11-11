@@ -11,7 +11,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   overflow-wrap: break-word;
-  max-width: 70ch;
+  max-width: var(--prose-width, 70ch);
   margin: 0 auto;
 }
 
@@ -299,26 +299,34 @@
 .prose pre code { font-size: inherit; background: none; border: 0; padding: 0; white-space: pre; }
 .prose > pre { background: var(--bg-code) !important; border: 1px solid var(--border); border-radius: 10px; }
 
+/* With a language: a slim header row above the code (label left, copy right),
+   so neither can cover a long first line. The label lines up with the code. */
 .prose .code-head {
-  position: absolute;
-  top: 0.55em;
-  right: 0.6em;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.4em;
+  min-height: 34px;
+  padding: 6px 8px 0 calc(var(--prose-size) * 0.84 * 1.25);
   font-family: var(--font-sans);
   font-size: 11px;
   line-height: 1;
 }
+.prose .code-head + pre { padding-top: 0.35em; }
 .prose .code-lang {
-  color: var(--faint);
-  background: var(--bg-code);
-  border-radius: 4px;
+  color: var(--muted);
   text-transform: lowercase;
   letter-spacing: 0.04em;
-  padding: 5px 4px;
-  transition: opacity 0.15s ease;
 }
+/* No language: nothing to label, so the copy button just floats on hover. */
+.prose .code-block:has(.code-lang:empty) .code-head {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  min-height: 0;
+  padding: 0;
+}
+.prose .code-block:has(.code-lang:empty) .code-head + pre { padding-top: 1.05em; }
 
 /* Shiki dual-theme tokens: light by default, dark when the page is dark. */
 .prose .shiki,

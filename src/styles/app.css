@@ -287,6 +287,55 @@ svg { flex: none; }
 .resizing { cursor: col-resize; user-select: none; }
 .resizing .pane { pointer-events: none; }
 
+/* Page width handles: grips at the text edges of the preview. */
+.page-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -100px;
+  z-index: 5;
+  width: 12px;
+  translate: -50% 0;
+  cursor: col-resize;
+  outline: none;
+  touch-action: none;
+}
+/* The grip appears only near the edge, at the pointer's height (--grip-y, set from JS). */
+.page-handle::before {
+  content: '';
+  position: absolute;
+  top: var(--grip-y, 50%);
+  left: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 4px;
+  translate: -50% -50%;
+  background: var(--border-strong);
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.15s ease, height 0.15s ease;
+}
+.page-handle.near::before { opacity: 1; }
+/* Both edges move together, so holding either grip lights up both. */
+.pane-preview:has(.page-handle:hover, .page-handle:focus-visible, .page-handle.dragging) .page-handle {
+  /* Faint guide down the whole edge while the grip is in hand. */
+  background: linear-gradient(color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 30%, transparent)) center / 1px 100% no-repeat;
+}
+.pane-preview:has(.page-handle:hover, .page-handle:focus-visible, .page-handle.dragging) .page-handle::before {
+  opacity: 1;
+  height: 48px;
+  background: var(--accent);
+}
+.page-handle[data-tip]::after {
+  top: var(--grip-y, 50%);
+  translate: 0 calc(-50% - 2px);
+}
+.page-handle[data-side='left'][data-tip]::after { left: calc(100% + 8px); right: auto; }
+.page-handle[data-side='right'][data-tip]::after { right: calc(100% + 8px); left: auto; }
+.page-handle[data-tip]:hover::after { translate: 0 -50%; transition-delay: 0.9s; }
+.resizing-page .page-handle::after { display: none; }
+.resizing-page { cursor: col-resize; user-select: none; }
+.resizing-page .preview-scroll { pointer-events: none; }
+
 :root[data-view='write'] .pane-preview,
 :root[data-view='write'] .splitter,
 :root[data-view='preview'] .pane-editor,
@@ -399,6 +448,7 @@ svg { flex: none; }
 /* Code block copy button (added at runtime) --------------------------- */
 
 .code-copy {
+  margin-left: auto;
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -412,9 +462,7 @@ svg { flex: none; }
 .code-copy:hover { color: var(--text); }
 .code-copy:focus-visible { opacity: 1; }
 .code-block:hover .code-copy { opacity: 1; }
-.code-block:hover .code-lang { opacity: 0; }
 .code-copy[data-copied] { color: var(--tip); opacity: 1; }
-.code-head:has(.code-copy[data-copied]) .code-lang { opacity: 0; }
 
 /* Toasts -------------------------------------------------------------- */
 
@@ -527,6 +575,7 @@ svg { flex: none; }
   .prose { --prose-size: 16px; }
   .prose.serif { --prose-size: 17px; }
   .prose .anchor { display: none; }
+  .page-handle { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -547,6 +596,7 @@ svg { flex: none; }
   .statusbar,
   .pane-editor,
   .splitter,
+  .page-handle,
   .toasts,
   .toc,
   .palette,

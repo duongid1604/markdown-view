@@ -1,11 +1,3 @@
-import '@fontsource-variable/inter';
-import '@fontsource-variable/jetbrains-mono';
-import '@fontsource-variable/source-serif-4';
-import './styles/tokens.css';
-import './styles/app.css';
-import './styles/prose.css';
-import './styles/features.css';
-
 import morphdom from 'morphdom';
 import type { EditorView } from '@codemirror/view';
 import { createEditor, replaceDoc, setFocusMode, insertBlock, insertFootnote, insertLink, goToLine } from './editor';
@@ -15,7 +7,7 @@ import { highlight, onHighlighterReady } from './highlight';
 import { renderMath, onMathReady, katexVersion } from './math';
 import { diagramKey, hydrateDiagrams, drawAllDiagrams } from './diagrams';
 import { ScrollSync } from './scroll-sync';
-import { load, save, loadSettings, type View, type Theme } from './storage';
+import { load, save, loadSettings, pageWidthCss, type View, type Theme, type PageWidth } from './storage';
 import { describe } from './stats';
 import { buildShareUrl, readShareHash, clearShareHash } from './share';
 import { buildStandaloneHtml, cleanPreviewHtml, copyText, download, fileNameFor } from './export';
@@ -24,7 +16,7 @@ import { setupMenu } from './ui/menu';
 import { Outline, type Heading } from './ui/outline';
 import { createPalette, type Command } from './ui/palette';
 import SAMPLE from './sample.md?raw';
-import { APP_NAME, SAMPLE_TITLE } from './config';
+import { SAMPLE_TITLE } from './config';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
@@ -194,12 +186,12 @@ outline.enabled = settings.outline;
 function setTitle(next: string) {
   title = next;
   titleInput.value = next;
-  document.title = `${next || 'Untitled'} — ${APP_NAME}`;
+  document.title = next || 'Untitled';
 }
 
 titleInput.addEventListener('input', () => {
   title = titleInput.value;
-  document.title = `${title || 'Untitled'} — ${APP_NAME}`;
+  document.title = title || 'Untitled';
   markDirty();
 });
 titleInput.addEventListener('keydown', (e) => {
@@ -289,7 +281,7 @@ function applyTheme(animate: boolean) {
   themeBtn.setAttribute('aria-label', nextLabel);
   menuEl.querySelector('[data-action="toggle-system"]')?.setAttribute('aria-checked', String(settings.theme === 'system'));
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    if (settings.theme !== 'system') meta.content = mode === 'dark' ? '#0F0F10' : '#FCFCFB';
+    if (settings.theme !== 'system') meta.content = mode === 'dark' ? '#1B1B1D' : '#FCFCFB';
   }
   hydrateDiagrams(previewEl, mode); // diagrams are drawn per theme
 }
@@ -340,6 +332,118 @@ splitter.addEventListener('keydown', (e) => {
   e.preventDefault();
   persistSettings();
 });
+
+/* Page width handles --------------------------------------------------- */
+
+const panePreview = $('.pane-preview');
+const pageHandles = Array.from(document.querySelectorAll<HTMLElement>('.page-handle'));
+const HANDLE_GAP = 14; // px between the text edge and the handle, so it never sits on the text
+const MIN_TEXT = 280; // narrowest text column, px
+
+/** Padding on both sides of the page; the stored width includes it (border-box). */
+function pagePadding() {
+  const cs = getComputedStyle(previewEl);
+  return parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+}
+
+function placePageHandles() {
+  const pane = panePreview.getBoundingClientRect();
+  const r = previewEl.getBoundingClientRect();
+  if (!r.width) return;
+  const cs = getComputedStyle(previewEl);
+  const left = r.left - pane.left + parseFloat(cs.paddingLeft) - HANDLE_GAP;
+  const right = r.right - pane.left - parseFloat(cs.paddingRight) + HANDLE_GAP;
+  for (const h of pageHandles) h.style.left = `${h.dataset.side === 'left' ? left : right}px`;
+}
+
+function setPageWidth(width: PageWidth) {
+  settings.width = width;
+  root.style.setProperty('--prose-width', pageWidthCss(width));
+  placePageHandles();
+}
+
+/** Apply a dragged width in px: snaps to 'full' once it reaches the pane. */
+function dragPageWidth(px: number) {
+  const max = previewScroll.clientWidth;
+  setPageWidth(px >= max - 1 ? 'full' : Math.max(MIN_TEXT + pagePadding(), px));
+}
+
+function pageWidthChanged() {
+  persistSettings();
+  sync.invalidate();
+  outline.refresh();
+}
+
+for (const handle of pageHandles) {
+  const dir = handle.dataset.side === 'left' ? -1 : 1; // moving outward makes the page wider
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    document.body.classList.add('resizing-page');
+    handle.classList.add('dragging');
+    const startX = e.clientX;
+    const startWidth = previewEl.getBoundingClientRect().width;
+    // The page is centred, so each side moves by half the change.
+    const move = (ev: PointerEvent) => dragPageWidth(startWidth + 2 * dir * (ev.clientX - startX));
+    const end = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('lostpointercapture', end);
+      document.body.classList.remove('resizing-page');
+      handle.classList.remove('dragging');
+      pageWidthChanged();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('lostpointercapture', end); // fires after pointerup/cancel, even off-window
+  });
+  handle.addEventListener('dblclick', () => {
+    setPageWidth(null);
+    pageWidthChanged();
+  });
+  handle.addEventListener('keydown', (e) => {
+    const step = e.shiftKey ? 64 : 16;
+    const delta = e.key === 'ArrowRight' ? step : e.key === 'ArrowLeft' ? -step : 0;
+    if (!delta) return;
+    e.preventDefault();
+    dragPageWidth(previewEl.getBoundingClientRect().width + 2 * dir * delta);
+    pageWidthChanged();
+  });
+}
+
+/* Show a grip only when the pointer comes near its edge, at the pointer's height. */
+const NEAR = 48; // px from the handle
+let nearFrame = 0;
+let lastPointer: { x: number; y: number } | null = null;
+
+function updateNearHandles() {
+  nearFrame = 0;
+  const pane = panePreview.getBoundingClientRect();
+  for (const h of pageHandles) {
+    const x = pane.left + parseFloat(h.style.left || '-1000');
+    h.classList.toggle('near', !!lastPointer && Math.abs(lastPointer.x - x) <= NEAR);
+  }
+  if (lastPointer) {
+    const y = Math.min(pane.height - 40, Math.max(40, lastPointer.y - pane.top));
+    panePreview.style.setProperty('--grip-y', `${y}px`);
+  }
+}
+
+panePreview.addEventListener(
+  'pointermove',
+  (e) => {
+    if (e.pointerType === 'touch') return;
+    lastPointer = { x: e.clientX, y: e.clientY };
+    if (!nearFrame) nearFrame = requestAnimationFrame(updateNearHandles);
+  },
+  { passive: true },
+);
+panePreview.addEventListener('pointerleave', () => {
+  lastPointer = null;
+  if (!nearFrame) nearFrame = requestAnimationFrame(updateNearHandles);
+});
+
+new ResizeObserver(placePageHandles).observe(previewEl);
+new ResizeObserver(placePageHandles).observe(panePreview);
 
 /* Preview interactions ------------------------------------------------- */
 
@@ -486,7 +590,7 @@ async function runAction(action: string) {
       await drawAllDiagrams(previewEl, effectiveTheme());
       download(
         fileNameFor(title, 'html'),
-        buildStandaloneHtml(title, previewEl, settings.serif, katexVersion()),
+        buildStandaloneHtml(title, previewEl, settings.serif, katexVersion(), pageWidthCss(settings.width)),
         'text/html;charset=utf-8',
       );
       break;
@@ -587,6 +691,7 @@ function commands(): Command[] {
     { id: 'outline', group: 'View', title: 'Outline', hint: onOff(settings.outline), keywords: 'toc table of contents headings', run: () => void runAction('toggle-outline') },
     { id: 'sync', group: 'View', title: 'Sync scroll', hint: onOff(settings.sync), run: () => void runAction('toggle-sync') },
     { id: 'serif', group: 'View', title: 'Serif preview', hint: onOff(settings.serif), keywords: 'font typeface', run: () => void runAction('toggle-serif') },
+    { id: 'width-reset', group: 'View', title: 'Reset page width', keywords: 'column measure size wide narrow full layout', run: () => { setPageWidth(null); persistSettings(); } },
     { id: 't-light', group: 'View', title: 'Light theme', keywords: 'appearance color', run: () => setTheme('light') },
     { id: 't-dark', group: 'View', title: 'Dark theme', keywords: 'appearance color night', run: () => setTheme('dark') },
     { id: 't-system', group: 'View', title: 'Match system theme', keywords: 'appearance auto', run: () => setTheme('system') },
@@ -711,6 +816,7 @@ previewEl.classList.toggle('serif', settings.serif);
 setChecked('toggle-sync', settings.sync);
 setChecked('toggle-serif', settings.serif);
 setChecked('toggle-outline', settings.outline);
+setPageWidth(settings.width);
 applyFocus();
 applyTheme(false);
 applyView();
